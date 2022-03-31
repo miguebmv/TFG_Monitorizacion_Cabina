@@ -6,6 +6,6 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   
-  Serial.print("Hola mundo: soy tu Nombre");
+  Serial.print("Hola mundo: soy Miguel Angel");
 
 }
