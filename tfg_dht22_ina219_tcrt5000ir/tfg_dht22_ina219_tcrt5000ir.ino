@@ -12,8 +12,9 @@
 DHTesp dht;
 ADC_MODE(ADC_VCC);
 
-
 Adafruit_INA219 ina219;
+
+const int pinTCRT5000 = 10;
 
 //-----------------------------------------------------
 
@@ -22,6 +23,7 @@ struct registro_datos {
         float corriente;
         float temperatura;
         float humedad;
+        int movimiento;
         };
 
 WiFiClient wClient;
@@ -112,6 +114,9 @@ String serializa_JSON (struct registro_datos datos)
       JsonObject INA219=jsonRoot.createNestedObject("INA219");
       INA219["Corriente"] = datos.corriente;
       INA219["Tension"] = datos.caida_tension;
+
+      JsonObject TCRT5000=jsonRoot.createNestedObject("TCRT5000");
+      TCRT5000["Puerta"] = datos.movimiento;
       
       serializeJson(jsonRoot,jsonString);
       return jsonString;
@@ -123,6 +128,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println("Empieza setup...");
+  pinMode(pinTCRT5000,INPUT);
   dht.setup(0, DHTesp::DHT22); // Connect DHT22 sensor to GPIO 0
   sprintf(ID_PLACA, "%d", ESP.getChipId());
   conecta_wifi();
@@ -158,8 +164,12 @@ if (ahora - ultimo_mensaje >= 10000) {
     char mensaje[TAMANHO_MENSAJE];
     ultimo_mensaje = ahora;
     //snprintf (mensaje, TAMANHO_MENSAJE, "Mensaje enviado desde %s en %6lu ms", ID_PLACA, ahora);
-    //Serial.println(mensaje);    
+    //Serial.println(mensaje); 
+
     struct registro_datos datos;
+
+    
+    datos.movimiento = digitalRead(pinTCRT5000);
 
 
     datos.humedad = dht.getHumidity();
@@ -173,8 +183,12 @@ if (ahora - ultimo_mensaje >= 10000) {
     
     Serial.print("Tension VCC:   "); Serial.print(datos.caida_tension); Serial.println(" V");
     Serial.print("Corriente:       "); Serial.print(datos.corriente); Serial.println(" mA");
+
+
+    Serial.print("Puerta ('0' cerrada '1' abierta)= ");
+    Serial.print(datos.movimiento);
     
-    Serial.println("");
+    Serial.println("\n");
     
     mqtt_client.publish("TFG/DHT22_INA219",serializa_JSON(datos).c_str());
     
